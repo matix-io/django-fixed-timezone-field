@@ -1,15 +1,70 @@
-# pip boilerplate
+# django-fixed-timezone-field
 
-How do you publish this shit?
+## What problem does this solve?
 
-1. Clone this repo.
-1. Change the git remote for this repo, so you don't overwrite the boilerplate.
-2. `pip install -r requirements.txt`
-2. Rename the `my_module` folder to whatever you want, and put your module there.
-3. Make sure `__init__.py` contains everything you want to export.
-4. Edit `setup.py`; replace the `name='my_module'` with whatever your module name is, then edit description, etc.
-5. Edit README.md - this is what shows up as the project readme.
-5. Edit `release.sh`, changing the `twine upload ...` command.
-5. `bash release.sh` to release; version stuff is included in that script.
+[There's a detailed description here](https://matix.io/django-fixed-timezone-dates-datetimes/).
 
-Good luck!
+## Installation
+
+`pip install django-fixed-timezone-field`
+
+## Usage
+
+Basic example:
+
+```python
+from django import forms
+from django.db import models
+from fixed_timezone_field import FixedTimezoneDateTimeField
+import pytz
+
+
+class Event(models.Model):
+	starts_at = models.DateTimeField()
+
+
+class EventForm(forms.ModelForm):
+	starts_at = FixedTimezoneDateTimeField()
+
+	class Meta:
+		model = Event
+		fields = ['starts_at']
+
+	def __init__(self, *args, **kwargs):
+		super().__init__(*args, **kwargs)
+		self.fields['starts_at'].timezone = pytz.UTC # or whatever timezone you want
+```
+
+If the model also contains the timezone, and the same form is used to submit both the timezone and the time, you need to use some other tricks.
+
+```python
+from django import forms
+from django.db import models
+from fixed_timezone_field import FixedTimezoneDateTimeField
+from timezone_field import TimeZoneField
+import pytz
+
+
+class Event(models.Model):
+	starts_at = models.DateTimeField()
+	timezone = TimeZoneField()
+
+
+class EventForm(forms.ModelForm):
+	starts_at = FixedTimezoneDateTimeField()
+
+	class Meta:
+		model = Event
+		fields = ['starts_at']
+
+	def __init__(self, *args, **kwargs):
+		super().__init__(*args, **kwargs)
+		self.fields['starts_at'].timezone = self.instance.timezone
+
+	def clean(self, *args, **kwargs):
+		cleaned_data = super().clean(*args, **kwargs)
+		timezone = cleaned_data['timezone']
+		cleaned_data['starts_at'] = tz.localize(cleaned_data['starts_at'].replace(tzinfo=None))
+		self.instance.starts_at = cleaned_data['starts_at']
+		return cleaned_data
+```
