@@ -6,11 +6,11 @@ with open('VERSION.txt') as f:
 
 
 setup(
-    name='my_module',
+    name='django-fixed-timezone-field',
     version=version,
-    url='https://my_url',
+    url='https://github.com/matix-io/django-fixed-timezone-field',
     license='MIT',
-    description='Project description',
+    description='Ignore the activated timezone.',
     long_description='',
     author='Connor Bode',
     author_email='connor@matix.io',
